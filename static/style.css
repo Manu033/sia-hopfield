@@ -1,0 +1,149 @@
+:root {
+            --cell: 48px;
+            --gap: 6px;
+            --bg: #0b0f14;
+            --fg: #e7eef7;
+            --muted: #94a3b8;
+            --accent: #4f46e5;
+        }
+
+        html,
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+            margin: 0;
+        }
+
+        h1,
+        h2 {
+            margin: 8px 0;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, var(--cell));
+            gap: var(--gap);
+            width: calc(4*var(--cell) + 3*var(--gap));
+        }
+
+        .cell {
+            width: var(--cell);
+            height: var(--cell);
+            border-radius: 8px;
+            background: #0f172a;
+            border: 1px solid #1f2937;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+        }
+
+        .cell.on {
+            background: #e5e7eb;
+            color: #0b0f14;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button.secondary {
+            background: #374151;
+        }
+
+        button.ghost {
+            background: transparent;
+            border: 1px solid #374151;
+        }
+
+        input[type="text"] {
+            background: #0b1220;
+            color: var(--fg);
+            border: 1px solid #1f2937;
+            border-radius: 8px;
+            padding: 8px 10px;
+            min-width: 120px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            border: 1px solid #1f2937;
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        .mini {
+            display: grid;
+            grid-template-columns: repeat(4, 10px);
+            gap: 2px;
+        }
+
+        .px {
+            width: 10px;
+            height: 10px;
+            background: #0f172a;
+        }
+
+        .px.on {
+            background: #e5e7eb;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .scroll {
+            max-height: 280px;
+            overflow: auto;
+        }
+
+        .kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            background: #0b1220;
+            border: 1px solid #1f2937;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }

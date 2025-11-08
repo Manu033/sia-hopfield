@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TP2 – Hopfield 4×4</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+</head>
+
+<body>
+    <div class="app">
+        <div class="card">
+            <h1>Hopfield 4×4</h1>
+            <p class="muted">1 = negro (ON), −1 = blanco (OFF). Hacé clic para alternar.</p>
+            <div id="grid" class="grid"></div>
+            <div class="row">
+                <input id="label" type="text" placeholder="Etiqueta (p. ej. A)" />
+                <button onclick="addToStore()">Guardar a entrenamiento</button>
+                <button class="secondary" onclick="clearGrid()">Limpiar</button>
+            </div>
+            <div class="row">
+                <button class="ghost" onclick="trainDefault()">Cargar letras ejemplo</button>
+                <button class="ghost" onclick="fetchW()">Ver matriz W</button>
+            </div>
+            <div class="row">
+                <button onclick="recognize()">Reconocer</button>
+                <span id="status" class="muted"></span>
+            </div>
+            <div class="row">
+                <span class="kbd" id="vectorOut">vector: []</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Resultados</h2>
+            <div class="two">
+                <div>
+                    <h3>Pasos de actualización</h3>
+                    <div id="steps" class="scroll"></div>
+                </div>
+                <div>
+                    <h3>Matriz W</h3>
+                    <div id="wtable" class="scroll"></div>
+                </div>
+            </div>
+            <div class="two" style="margin-top:12px;">
+                <div>
+                    <h3>Patrones aprendidos</h3>
+                    <div id="learned" class="scroll"></div>
+                </div>
+                <div>
+                    <h3>Diagnóstico</h3>
+                    <div id="diag"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+    </script>
+</body>
+
+</html>

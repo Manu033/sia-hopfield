@@ -1,0 +1,386 @@
+import numpy as np
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+
+# ===========================
+# Utilidades
+# ===========================
+
+
+def to_col_vec(x):
+    x = np.array(x, dtype=int).reshape(-1)
+    assert set(np.unique(x)).issubset({-1, 1}), "Vector debe tener valores -1 o 1"
+    return x
+
+
+# Funcion de activación
+def sign(z):
+    # sgn(0) = 1 por conveniencia; puede ajustarse si se desea sgn(0)=0
+    return np.where(z >= 0, 1, -1)
+
+
+def energy(W, x):
+    # Energía de Hopfield (sin sesgo): E(x) = -1/2 x^T W x
+    return float(-0.5 * x.T @ W @ x)
+
+
+# ===========================
+# Clase Hopfield
+# ===========================
+
+
+class Hopfield:
+    def __init__(self, n):
+        self.n = n
+        self.W = np.zeros((n, n), dtype=int)
+        self.learned = {}  # label -> pattern (np.array)
+
+    def reset(self):
+        self.W[:] = 0
+        self.learned.clear()
+
+    def hebbian_train(self, patterns):
+        """patterns: lista de np.array shape (n,) con valores {-1, 1}
+        Regla: W = sum(p p^T), diagonal en 0.
+        """
+        W = np.zeros((self.n, self.n), dtype=int)
+        for p in patterns:
+            p = to_col_vec(p)
+            W += np.outer(p, p)
+        np.fill_diagonal(W, 0)
+        self.W = W
+        return self.W
+
+    def store_labeled(self, labeled_patterns):
+        """labeled_patterns: lista de dicts {"label":str, "vector":[...]}"""
+        for item in labeled_patterns:
+            lab = item["label"].strip().upper()
+            vec = to_col_vec(item["vector"])  # valida {-1,1}
+            if vec.size != self.n:
+                raise ValueError("Dimensión incorrecta del vector")
+            self.learned[lab] = vec
+        # re-entrenar con todos los almacenados
+        allp = list(self.learned.values())
+        if allp:
+            self.hebbian_train(allp)
+        else:
+            self.W[:] = 0
+
+    def recognize(self, x0, max_steps=10, synchronous=True):
+        x = to_col_vec(x0)
+        steps = []
+        E = []
+        for k in range(max_steps):
+            h = self.W @ x
+            s = sign(h)
+            steps.append(
+                {
+                    "k": k + 1,
+                    "h": h.tolist(),
+                    "s": s.tolist(),
+                }
+            )
+            E.append(energy(self.W, s))
+            if np.array_equal(s, x):
+                break  # punto fijo
+            x = s
+        # matching exacto contra los aprendidos
+        match_label = None
+        for lab, p in self.learned.items():
+            if np.array_equal(p, x):
+                match_label = lab
+                break
+        # distancia Hamming al más cercano (por diagnóstico)
+        best_label = None
+        best_dist = None
+        for lab, p in self.learned.items():
+            d = int(np.sum(p != x))
+            if best_dist is None or d < best_dist:
+                best_dist = d
+                best_label = lab
+        return {
+            "final": x.tolist(),
+            "match": match_label,  # None si no coincide exactamente
+            "nearest_label": best_label,  # sugerencia por cercanía
+            "nearest_hamming": best_dist,
+            "steps": steps,
+            "energies": E,
+        }
+
+
+# ===========================
+# Datos de ejemplo (>=10 letras)
+# Convención: 1 = negro, -1 = blanco; recorrido por filas (4x4 = 16)
+# Estas son plantillas simples tipo bloque para A, C, E, F, H, I, L, O, P, T, U, V
+# (Podés editar/expandir)
+# ===========================
+
+LETTER_4x4 = {
+    "A": [
+        -1,
+        1,
+        1,
+        -1,
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+    ],
+    "C": [
+        -1,
+        1,
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+    ],
+    "F": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+        -1,
+        1,
+        -1,
+        -1,
+        -1,
+    ],
+    "H": [
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+    ],
+    "I": [
+        1,
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+        1,
+        1,
+        1,
+        1,
+    ],
+    "L": [
+        1,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+        1,
+    ],
+    "O": [
+        -1,
+        1,
+        1,
+        -1,
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        -1,
+        1,
+        1,
+        -1,
+    ],
+    "P": [
+        1,
+        1,
+        1,
+        -1,
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+        1,
+        -1,
+        1,
+        -1,
+        -1,
+        -1,
+    ],
+    "T": [
+        1,
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+    ],
+    "U": [
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        -1,
+        1,
+        1,
+        -1,
+    ],
+    "V": [
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+    ],
+    "Z": [1, 1, 1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1],
+}
+
+# ===========================
+# Servidor Flask
+# ===========================
+
+app = Flask(__name__, static_folder="static", static_url_path="/")
+CORS(app)
+
+N = 16
+HOP = Hopfield(N)
+
+# Cargar por defecto algunas letras
+HOP.store_labeled([{"label": k, "vector": v} for k, v in LETTER_4x4.items()])
+
+
+@app.get("/")
+def root():
+    return send_from_directory("static", "index.html")
+
+
+@app.get("/api/W")
+def api_W():
+    return jsonify({"W": HOP.W.tolist()})
+
+
+@app.get("/api/letters")
+def api_letters():
+    return jsonify(
+        {
+            "n": HOP.n,
+            "labels": list(HOP.learned.keys()),
+            "patterns": {k: v.tolist() for k, v in HOP.learned.items()},
+        }
+    )
+
+
+@app.post("/api/reset")
+def api_reset():
+    HOP.reset()
+    return jsonify({"ok": True})
+
+
+@app.post("/api/store")
+def api_store():
+    data = request.get_json(force=True)
+    items = data.get("patterns", [])
+    HOP.store_labeled(items)
+    return jsonify({"ok": True, "labels": list(HOP.learned.keys())})
+
+
+@app.post("/api/train_default")
+def api_train_default():
+    HOP.store_labeled([{"label": k, "vector": v} for k, v in LETTER_4x4.items()])
+    return jsonify({"ok": True, "labels": list(HOP.learned.keys())})
+
+
+@app.post("/api/recognize")
+def api_recognize():
+    data = request.get_json(force=True)
+    vec = data.get("vector")
+    max_steps = int(data.get("max_steps", 10))
+    result = HOP.recognize(vec, max_steps=max_steps)
+    result["energy_final"] = energy(HOP.W, np.array(result["final"]))
+    return jsonify(result)
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
