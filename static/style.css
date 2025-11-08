@@ -37,7 +37,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(4, var(--cell));
+            grid-template-columns: repeat(9, var(--cell));
             gap: var(--gap);
             width: calc(4*var(--cell) + 3*var(--gap));
         }
@@ -110,7 +110,7 @@
 
         .mini {
             display: grid;
-            grid-template-columns: repeat(4, 10px);
+            grid-template-columns: repeat(9, 10px);
             gap: 2px;
         }
 

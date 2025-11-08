@@ -1,4 +1,4 @@
-const N = 16;
+const N = 81;
 const grid = document.getElementById('grid');
 const vectorOut = document.getElementById('vectorOut');
 const stepsDiv = document.getElementById('steps');
