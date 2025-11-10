@@ -40,14 +40,12 @@ class Hopfield:
         self.learned.clear()
 
     def hebbian_train(self, patterns):
-        """patterns: lista de np.array shape (n,) con valores {-1, 1}
-        Regla: W = sum(p p^T), diagonal en 0.
-        """
-        W = np.zeros((self.n, self.n), dtype=int)
+        W = np.zeros((self.n, self.n), dtype=float)
         for p in patterns:
             p = to_col_vec(p)
             W += np.outer(p, p)
         np.fill_diagonal(W, 0)
+        W /= len(patterns)  # ← normaliza por cantidad de patrones
         self.W = W
         return self.W
 
@@ -66,45 +64,62 @@ class Hopfield:
         else:
             self.W[:] = 0
 
-    def recognize(self, x0, max_steps=10, synchronous=True):
+    def recognize(self, x0, max_steps=20, synchronous=False):
+        """Reconocimiento con actualización asíncrona y energía monitoreada."""
         x = to_col_vec(x0)
-        steps = []
-        E = []
+        steps, energies = [], []
+
         for k in range(max_steps):
-            h = self.W @ x
-            s = sign(h)
+            prev_x = x.copy()
+
+            if synchronous:
+                h = self.W @ x
+                s = np.where(h > 0, 1, np.where(h < 0, -1, x))  # conserva estado si h=0
+                x = s
+            else:
+                # actualización asíncrona (garantiza descenso de energía)
+                for i in np.random.permutation(self.n):
+                    h_i = np.dot(self.W[i, :], x)
+                    if h_i > 0:
+                        x[i] = 1
+                    elif h_i < 0:
+                        x[i] = -1
+                    # si h_i == 0, deja x[i] igual
+
+            energies.append(energy(self.W, x))
             steps.append(
                 {
                     "k": k + 1,
-                    "h": h.tolist(),
-                    "s": s.tolist(),
+                    "h": (self.W @ x).tolist(),  # vuelve a incluir h
+                    "s": x.tolist(),
                 }
             )
-            E.append(energy(self.W, s))
-            if np.array_equal(s, x):
-                break  # punto fijo
-            x = s
-        # matching exacto contra los aprendidos
+
+            if np.array_equal(x, prev_x):
+                break  # alcanzó equilibrio
+
+        # buscar coincidencia
         match_label = None
         for lab, p in self.learned.items():
             if np.array_equal(p, x):
                 match_label = lab
                 break
-        # distancia Hamming al más cercano (por diagnóstico)
-        best_label = None
-        best_dist = None
+
+        # distancia mínima por diagnóstico
+        best_label, best_dist = None, None
         for lab, p in self.learned.items():
             d = int(np.sum(p != x))
             if best_dist is None or d < best_dist:
-                best_dist = d
-                best_label = lab
+                best_label, best_dist = lab, d
+
         return {
             "final": x.tolist(),
-            "match": match_label,  # None si no coincide exactamente
-            "nearest_label": best_label,  # sugerencia por cercanía
+            "match": match_label,
+            "nearest_label": best_label,
             "nearest_hamming": best_dist,
             "steps": steps,
-            "energies": E,
+            "energies": energies,
+            "energy_final": energies[-1],
         }
 
 
@@ -1000,6 +1015,7 @@ def api_store():
 
 @app.post("/api/train_default")
 def api_train_default():
+    HOP.reset()
     HOP.store_labeled([{"label": k, "vector": v} for k, v in LETTER_9x9.items()])
     return jsonify({"ok": True, "labels": list(HOP.learned.keys())})
 
@@ -1008,7 +1024,7 @@ def api_train_default():
 def api_recognize():
     data = request.get_json(force=True)
     vec = data.get("vector")
-    max_steps = int(data.get("max_steps", 10))
+    max_steps = int(data.get("max_steps", 20))
     result = HOP.recognize(vec, max_steps=max_steps)
     result["energy_final"] = energy(HOP.W, np.array(result["final"]))
     return jsonify(result)

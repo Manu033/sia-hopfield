@@ -1,5 +1,5 @@
 :root {
-            --cell: 48px;
+            --cell: 27px;
             --gap: 6px;
             --bg: #0b0f14;
             --fg: #e7eef7;
@@ -39,7 +39,7 @@
             display: grid;
             grid-template-columns: repeat(9, var(--cell));
             gap: var(--gap);
-            width: calc(4*var(--cell) + 3*var(--gap));
+            width: calc(9*var(--cell) + 8*var(--gap));
         }
 
         .cell {
