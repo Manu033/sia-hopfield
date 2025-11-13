@@ -66,6 +66,152 @@ W = Σ(pᵢ · pᵢᵀ) con diagonal = 0
 
 **Propiedad crucial**: La energía nunca aumenta, garantizando convergencia a un atractor.
 
+### La Función de Energía
+
+#### ¿Qué es la Función de Energía?
+
+La función de energía en Hopfield es una **medida cuantitativa del estado de la red**:
+
+```
+E(x) = -1/2 · x^T · W · x
+```
+
+Donde:
+- **x** = vector de estado de las neuronas (81 elementos, cada uno ±1)
+- **W** = matriz de pesos (81×81)
+- **E(x)** = escalar (número) que representa la energía total
+
+#### Interpretación Física
+
+La energía es como la **altura en un paisaje montañoso**:
+- **Energía baja** = valle (atractor estable)
+- **Energía alta** = montaña (estado inestable)
+- La red siempre "rueda hacia abajo" (minimiza energía)
+
+#### Propiedades Matemáticas Cruciales
+
+**1. Monotonicidad (garantiza convergencia)**
+
+En cada actualización asíncrona:
+```
+E(t+1) ≤ E(t)
+```
+
+Es decir, la energía **nunca aumenta**. Esto garantiza que:
+- La red convergerá a un mínimo local
+- No habrá oscilaciones infinitas
+- Siempre alcanzará un punto fijo (atractor)
+
+**Demostración intuitiva:**
+```
+Si actualizamos la neurona i:
+- Si h_i >= 0: cambiamos x_i a 1
+  → El producto x_i · (W_i · x) aumenta
+  → La energía disminuye (por el signo negativo en la fórmula)
+
+- Si h_i < 0: cambiamos x_i a -1
+  → El producto x_i · (W_i · x) disminuye
+  → La energía disminuye
+```
+
+**2. Función de Lyapunov**
+
+La energía es una **función de Lyapunov** para el sistema dinámico:
+- Garantiza estabilidad teórica
+- Permite demostrar formalmente que Hopfield funciona
+
+#### Ejemplo Numérico
+
+Supongamos una red pequeña con W y x:
+
+```
+W = [[ 0   2   -1]
+     [ 2   0    1]
+     [-1   1    0]]
+
+x = [1, 1, -1]
+
+Cálculo de energía:
+E(x) = -1/2 · x^T · W · x
+     = -1/2 · [1, 1, -1] · [[ 0   2  -1]    [1]
+                            [ 2   0   1]  ·  [1]
+                            [-1   1   0]]    [-1]
+
+     = -1/2 · [1, 1, -1] · [2 + 1, 2 - 1, -1 - 1]
+     = -1/2 · [1, 1, -1] · [3, 1, -2]
+     = -1/2 · (1·3 + 1·1 + (-1)·(-2))
+     = -1/2 · (3 + 1 + 2)
+     = -1/2 · 6
+     = -3
+```
+
+#### Visualización del Proceso
+
+```
+Reconocimiento con energía:
+
+Paso 0 (entrada ruidosa):
+  x = [1, -1, 1, 1, -1, ...] (patrón con ruido)
+  E = -420.5
+
+Paso 1 (actualizar neuronas):
+  x = [1, 1, 1, 1, -1, ...]  (se corrige ruido)
+  E = -435.2  ✓ (energía bajó → converge bien)
+
+Paso 2:
+  x = [1, 1, 1, 1, -1, ...]  (no cambia)
+  E = -435.2  ✓ (igual = punto fijo, convergió)
+
+Resultado: Red encontró un atractor stable en -435.2
+```
+
+#### Utilidad en la Aplicación
+
+En tu aplicación mostrás:
+```javascript
+Energía final: -450.5
+```
+
+Esto te permite:
+
+1. **Verificar convergencia**: Si energía se estabiliza = red converge
+2. **Comparar patrones**: Energía más baja = atractor más profundo/estable
+3. **Detectar errores**: Si energía sube = hay un bug en la implementación
+4. **Entender la dinámmica**: Ves cómo desciende paso a paso
+
+#### Interpretación de Resultados
+
+```
+ENERGÍA BAJA (ej: -450)
+└─ Patrón MUY estable
+   └─ Probablemente sea un atractor fundamental
+
+ENERGÍA MEDIA (ej: -350)
+└─ Patrón estable pero menos profundo
+   └─ Podría ser un atractor espurio
+
+ENERGÍA ALTA (ej: -100)
+└─ Patrón poco estable
+   └─ Podría converger a otro atractor si hay perturbación
+```
+
+#### Relación con Reconocimiento
+
+```
+Entrada: Letra "A" con ruido
+         ├─ Energía inicial: -410
+         └─ Pasos hasta convergencia: 4
+             ├─ Paso 1: E = -420
+             ├─ Paso 2: E = -430
+             ├─ Paso 3: E = -435
+             └─ Paso 4: E = -435 (punto fijo)
+
+Resultado: Convergió a "A" exitosamente
+Indicador: Energía bajó monótonamente
+```
+
+Si la energía **nunca bajara o subiera**, significaría que hay un error en el algoritmo.
+
 ---
 
 ## Arquitectura del Proyecto
