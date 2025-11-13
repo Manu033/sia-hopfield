@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     <title>TP2 – Hopfield 9×9</title>
     <link rel="stylesheet" href="style.css" />
     <script src="app.js" defer></script>
@@ -17,15 +17,17 @@
             <div id="grid" class="grid"></div>
             <div class="row">
                 <input id="label" type="text" placeholder="Etiqueta (p. ej. A)" />
-                <button onclick="addToStore()">Guardar a entrenamiento</button>
+                <button onclick="addToStore()">Guardar</button>
                 <button class="secondary" onclick="clearGrid()">Limpiar</button>
             </div>
             <div class="row">
-                <button class="ghost" onclick="trainDefault()">Cargar letras ejemplo</button>
-                <button class="ghost" onclick="fetchW()">Ver matriz W</button>
+                <button class="ghost" onclick="trainDefault()">Cargar ejemplo</button>
+                <button class="ghost" onclick="fetchW()">Ver W</button>
             </div>
             <div class="row">
                 <button onclick="recognize()">Reconocer</button>
+            </div>
+            <div class="row">
                 <span id="status" class="muted"></span>
             </div>
             <div class="row">
@@ -36,7 +38,9 @@
         <div class="card">
             <h2>Resultados</h2>
             <div class="two">
-                <div>
+                <div style="
+    width: 404px;
+">
                     <h3>Pasos de actualización</h3>
                     <div id="steps" class="scroll"></div>
                 </div>
@@ -57,10 +61,6 @@
             </div>
         </div>
     </div>
-
-    <script>
-
-    </script>
 </body>
 
 </html>

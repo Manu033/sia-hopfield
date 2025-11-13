@@ -45,7 +45,7 @@ class Hopfield:
             p = to_col_vec(p)
             W += np.outer(p, p)
         np.fill_diagonal(W, 0)
-        W /= len(patterns)  # ← normaliza por cantidad de patrones
+        # W /= (2* len(patterns))  # ← normaliza por cantidad de patrones
         self.W = W
         return self.W
 
@@ -67,6 +67,10 @@ class Hopfield:
     def recognize(self, x0, max_steps=20, synchronous=False):
         """Reconocimiento con actualización asíncrona y energía monitoreada."""
         x = to_col_vec(x0)
+        print(x)
+        # Validar dimensión del vector de entrada
+        if x.size != self.n:
+            raise ValueError(f"Dimensión incorrecta del vector: esperado {self.n}, recibido {x.size}")
         steps, energies = [], []
 
         for k in range(max_steps):
@@ -74,7 +78,7 @@ class Hopfield:
 
             if synchronous:
                 h = self.W @ x
-                s = np.where(h > 0, 1, np.where(h < 0, -1, x))  # conserva estado si h=0
+                s = np.where(h >= 0, 1, np.where(h < 0, -1, x))  
                 x = s
             else:
                 # actualización asíncrona (garantiza descenso de energía)
@@ -175,6 +179,7 @@ LETTER_9x9 = {
          1, 1, -1, -1, -1, -1, -1, -1, -1, 
          1, 1, -1, -1, -1, -1, -1, -1, -1
     ],
+    
     "J": [
         -1, -1, -1, -1, -1, -1, -1, -1, -1, 
         -1, -1, -1, -1, -1, -1,  1,  1, -1, 
@@ -267,6 +272,7 @@ def api_train_default():
 @app.post("/api/recognize")
 def api_recognize():
     data = request.get_json(force=True)
+    print(data)
     vec = data.get("vector")
     max_steps = int(data.get("max_steps", 20))
     result = HOP.recognize(vec, max_steps=max_steps)
